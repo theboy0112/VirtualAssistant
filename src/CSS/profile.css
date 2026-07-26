@@ -1,0 +1,94 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  padding: 40px;
+  width: 100%;
+  max-width: 1000px;
+  margin: 0 auto;
+  align-items: stretch;
+}
+
+.profile-info {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  padding: 30px;
+  border-radius: 24px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.profile-edu,
+.profile-exp {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: var(--text-primary);
+  font-size: 1.1rem;
+  font-weight: 500;
+  text-align: left;
+}
+
+.profile-icon {
+  width: 32px;
+  height: 32px;
+  padding: 6px;
+  background: var(--glass-border);
+  border-radius: 8px;
+  filter: brightness(1.2);
+}
+
+.calendar-wrapper {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  padding: 30px;
+  border-radius: 24px;
+  color: var(--text-primary);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.calendar-wrapper h5 {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+  font-weight: 400;
+  text-align: center;
+}
+
+.snake-container {
+  display: flex;
+  justify-content: center;
+  margin: 10px 0;
+}
+
+.github-snake {
+  width: 100%;
+  max-width: 800px;
+  border-radius: 12px;
+  filter: var(--snake-filter);
+  transition: all 0.5s ease;
+}
+
+
+@media (max-width: 768px) {
+  .container {
+    padding: 20px;
+    gap: 20px;
+  }
+  .profile-info,
+  .calendar-wrapper {
+    padding: 20px;
+  }
+  .profile-edu,
+  .profile-exp {
+    font-size: 1rem;
+  }
+}
