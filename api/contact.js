@@ -3,7 +3,6 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { Resend } from 'resend';
 
-const RECIPIENT_EMAIL = process.env.CONTACT_RECIPIENT_EMAIL || 'clifboycabrera1202@gmail.com';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -34,6 +33,12 @@ function loadLocalEnv() {
 }
 
 loadLocalEnv();
+
+const DEFAULT_RECIPIENT_EMAIL = 'clifboycabrera1202@gmail.com';
+const DEFAULT_SENDER_EMAIL = 'onboarding@resend.dev';
+const RECIPIENT_EMAIL = process.env.CONTACT_RECIPIENT_EMAIL || DEFAULT_RECIPIENT_EMAIL;
+const SENDER_NAME = process.env.RESEND_FROM_NAME || 'Portfolio Contact';
+const SENDER_EMAIL = process.env.RESEND_FROM_EMAIL || DEFAULT_SENDER_EMAIL;
 
 // ---------- Helpers ----------
 const sanitizeInput = (value) => {
@@ -196,11 +201,9 @@ export default async function handler(req, res) {
 
     const resend = new Resend(apiKey);
     const payload = { from_name, user_email, subject, message };
-    const senderName = process.env.RESEND_FROM_NAME || 'Portfolio Contact';
-    const senderEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
 
     const emailResponse = await resend.emails.send({
-      from: `${senderName} <${senderEmail}>`,
+      from: `${SENDER_NAME} <${SENDER_EMAIL}>`,
       to: [RECIPIENT_EMAIL],
       reply_to: user_email,
       subject: `New Portfolio Inquiry: ${subject}`,
