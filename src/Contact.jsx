@@ -1,5 +1,4 @@
-import React, { useRef, useEffect } from "react";
-import emailjs from "@emailjs/browser";
+import React, { useRef, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEnvelope, faPhone } from "@fortawesome/free-solid-svg-icons";
 import li from "./assets/li.png";
@@ -10,7 +9,8 @@ import Swal from "sweetalert2";
 
 function Contact() {
   const typedRef = useRef(null);
-  const form = useRef();
+  const form = useRef(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const typed = new Typed(typedRef.current, {
@@ -32,11 +32,21 @@ function Contact() {
     };
   }, []);
 
-  const sendEmail = (e) => {
+  const sanitizeInput = (value) => {
+    if (typeof value !== "string") return "";
+    return value.replace(/<[^>]*>/g, "").replace(/\s+/g, " ").trim();
+  };
+
+  const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+  const sendEmail = async (e) => {
     e.preventDefault();
 
-    const honeypot = form.current.querySelector('input[name="honeypot"]').value;
-    if (honeypot) {
+    const formElement = form.current;
+    if (!formElement) return;
+
+    const honeypot = formElement.querySelector('input[name="honeypot"]');
+    if (honeypot && honeypot.value.trim()) {
       Swal.fire({
         title: "Bot Detected",
         text: "Message not sent.",
@@ -46,57 +56,75 @@ function Contact() {
       return;
     }
 
-    const submitButton = form.current.querySelector('button[type="submit"]');
-    submitButton.disabled = true;
-    submitButton.textContent = "Sending...";
-
-    const formData = new FormData(form.current);
-    const name = formData.get("from_name");
-    const email = formData.get("user_email");
-    const subject = formData.get("subject");
-    const message = formData.get("message");
-
-    const triggerMailtoFallback = () => {
-      const mailtoUrl = `mailto:clifboycabrera1202@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\nMessage:\n${message}`)}`;
-      window.location.href = mailtoUrl;
+    const formData = new FormData(formElement);
+    const payload = {
+      from_name: sanitizeInput(formData.get("from_name")),
+      user_email: sanitizeInput(formData.get("user_email")),
+      subject: sanitizeInput(formData.get("subject")),
+      message: sanitizeInput(formData.get("message")),
+      honeypot: sanitizeInput(formData.get("honeypot")),
     };
 
-    emailjs
-      .sendForm(
-        "service_e5ngyy6",
-        "template_yn8kixe",
-        form.current,
-        "dcauHtnGsdkNIMdna"
-      )
-      .then(
-        () => {
-          Swal.fire({
-            title: "Success!",
-            text: "Your message has been sent successfully to clifboycabrera1202@gmail.com!",
-            icon: "success",
-            confirmButtonColor: "var(--accent-color)",
-            background: "var(--bg-secondary)",
-            color: "var(--text-primary)",
-          });
-          form.current.reset();
-        },
-        (error) => {
-          console.warn("EmailJS direct send encountered an issue, opening mailto fallback:", error);
-          triggerMailtoFallback();
-          Swal.fire({
-            title: "Opening Email Client",
-            text: "Opening your default email client to send message directly to clifboycabrera1202@gmail.com...",
-            icon: "info",
-            confirmButtonColor: "var(--accent-color)",
-            background: "var(--bg-secondary)",
-            color: "var(--text-primary)",
-          });
-        }
-      )
-      .finally(() => {
-        submitButton.disabled = false;
-        submitButton.textContent = "Send Message";
+    if (!payload.from_name || !payload.user_email || !payload.subject || !payload.message) {
+      Swal.fire({
+        title: "Validation Error",
+        text: "Please fill out all the required fields.",
+        icon: "error",
+        confirmButtonColor: "var(--accent-color)",
       });
+      return;
+    }
+
+    if (!isValidEmail(payload.user_email)) {
+      Swal.fire({
+        title: "Validation Error",
+        text: "Please enter a valid email address.",
+        icon: "error",
+        confirmButtonColor: "var(--accent-color)",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(data.message || "Unable to send message.");
+      }
+
+      Swal.fire({
+        title: "Success!",
+        text: "Your message has been sent successfully to clifboycabrera1202@gmail.com!",
+        icon: "success",
+        confirmButtonColor: "var(--accent-color)",
+        background: "var(--bg-secondary)",
+        color: "var(--text-primary)",
+      });
+
+      formElement.reset();
+    } catch (error) {
+      console.error("Contact form submission failed", error);
+      Swal.fire({
+        title: "Message Not Sent",
+        text: error.message || "Something went wrong while sending your message.",
+        icon: "error",
+        confirmButtonColor: "var(--accent-color)",
+        background: "var(--bg-secondary)",
+        color: "var(--text-primary)",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -200,8 +228,8 @@ function Contact() {
                 autoComplete="off"
               />
 
-              <button type="submit" className="submit-button">
-                <span>Send Message</span>
+              <button type="submit" className="submit-button" disabled={isSubmitting}>
+                <span>{isSubmitting ? "Sending..." : "Send Message"}</span>
               </button>
             </form>
           </div>
